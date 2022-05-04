@@ -201,7 +201,7 @@
                                 "stroke_linecap": "butt",
                                 "fill": "red",
                                 "opacity": 0.5,
-                                "label": "Core Example", // not built into plotting template yet
+                                "label": "", // not built into plotting template yet
                                 "label_orientation": "horizontal", // not built into plotting template yet
                                 "lable_position": "right" // not built into plotting template yet
                             }
@@ -417,8 +417,8 @@
                                 "stroke_linecap": "butt",
                                 "fill": "red",
                                 "opacity": 0.5,
-                                "label": "Core Example", // not built into plotting template yet
-                                "label_orientation": "horizontal", // not built into plotting template yet
+                                "label": "mple", // not built into plotting template yet
+                                "label_orieCore Exantation": "horizontal", // not built into plotting template yet
                                 "lable_position": "right" // not built into plotting template yet
                             }
                         ]
@@ -434,7 +434,7 @@
         ///////////////////////////////
 
         /**
-         * findDepthName is a function that takes in a wellio style JSON representation of the well log, 
+         * findDepthName is a function that takes in a wellio style JSON representation of the well log,
          * looks at all the curve names and finds the one that is probably the depth curve, then returns it.
          * This is useful for not plotting the depth curve.
          * @param {object} well_log_in_json a full wellio style JSON
@@ -513,7 +513,18 @@
          */
         fromJSONofWEllGetThingsForPlotting: function (jsonWell, depth_curve_name) {
             curve_names = Object.keys(jsonWell["CURVES"]);
-            uwi = jsonWell["WELL INFORMATION BLOCK"]["UWI"]["DATA"];
+            uwi = ""
+            try {
+                uwi = jsonWell["WELL INFORMATION BLOCK"]["UWI"]["DATA"];
+              }
+            catch(err) {
+                try{
+                    uwi = jsonWell["WELL INFORMATION BLOCK"]["WEll"]["DATA"];
+                }
+                catch(err) {
+                    console.log("function fromJSONofWEllGetThingsForPlotting in wellioviz.js tried to find the UWI name and then well name and could find neighter in the place it expected. Please submit an issue at https://github.com/JustinGOSSES/wellioviz .",err)
+                }
+              }
             depth_curve_name = depth_curve_name;
             well_log_curves_reformatted_for_d3 = module.exports.convertWellJSONToObj(jsonWell, curve_names, uwi, depth_curve_name);
             return {
@@ -936,14 +947,14 @@
             //// Apply depth min and max to incoming well log data
             //// To save time, we'll first check if the first object in the array had as depth that is smaller than min
             //// and check if the last object in the array has a depth that is larger than the max, if not. we do nothing.
-
+            console.log("data before", data)
             if (data[0][depth_curve_name] > depth_min && data[-1][depth_curve_name] < depth_max) {
             } else {
                 data = data.filter(function (objects) {
-                    return objects[depth_curve_name] > depth_min && objects[depth_curve_name] < depth_max;
+                    return objects[depth_curve_name] >= depth_min && objects[depth_curve_name] <= depth_max;
                 });
             }
-
+            console.log("data after", data)
             // let depth_min = -1000000
             // let depth_max = 1000000
 
@@ -1137,7 +1148,7 @@
                 .attr("y", 0 - (margin.left * 0.6))
                 .attr("x", ((height) / -2) + margin.top)
                 .style("text-anchor", "end")
-                .text(y_axis_text)
+                .text("")
                 .style("fill", "#2b2929");
 
             ////
@@ -1179,16 +1190,16 @@
             }
 
 
-//   //// This will help save the x axis function for first curve if there are more than one curve 
+//   //// This will help save the x axis function for first curve if there are more than one curve
 //   /// and they are at different scales. We need this in order to use the 'between' method of fill!
-//   let x_for_k_is_0 
-//   //// This will help save the x axis function for second curve if there are more than one curve 
+//   let x_for_k_is_0
+//   //// This will help save the x axis function for second curve if there are more than one curve
 //   /// and they are at different scales. We need this in order to use the 'between' method of fill!
 //   let x_for_k_is_1
-//   //// This will help save the x axis function for third curve if there are more than one curve 
+//   //// This will help save the x axis function for third curve if there are more than one curve
 //   /// and they are at different scales. We need this in order to use the 'between' method of fill!
 //   let x_for_k_is_2
-//   //// This will help save the x axis function for fourth curve if there are more than one curve 
+//   //// This will help save the x axis function for fourth curve if there are more than one curve
 //   /// and they are at different scales. We need this in order to use the 'between' method of fill!
 //   let x_for_k_is_3
 
@@ -1238,7 +1249,7 @@
                         .style("text-decoration", "underline")
                         .style("fill", curve_colors[k])
                         .text(header_text_line);
-                    let translate_string = "translate(0," + (45 - (30 * k)).toString() + ")";
+                    let translate_string = "translate(0," + ((30 * k) + 15).toString() + ")";
                     xAxis_header = g => g.attr("transform", translate_string).call(d3.axisBottom(x).ticks((width - margin.left - margin.right) / 25).tickSizeOuter(0));
                     svg_header.append("g")
                         .call(xAxis_header)
@@ -1315,7 +1326,7 @@
             }
 
             ////////////////      TOOLTIP Part 1       ///////////////////
-            if (mouseover_yes_or_no == "no") {
+            /*if (mouseover_yes_or_no == "no") {
                 console.log("mouseover_yes_or_no = 'no' so no mouseover or hover of depth or curve value will be shown");
             } else {
                 //// statements to make sure the mouseover_curvename is a present curve and if not use first curve
@@ -1445,7 +1456,7 @@
                     })
                     .on("mousemove", mousemove);                       // **********
             }
-
+            */
             //////////////  Horizontal Lines AKA tops =>//////////////
             try {
                 for (let i = 0; i < template_lines.length; i++) {
@@ -1508,12 +1519,12 @@
         /**
          * This function is used to quickly plot multiple curves as separate curveboxes and taking into consideration a
          * list of curves to skip and some basic pre-built styles, both given as arguments.
-         * @param {array} well_log_curves_reformatted_for_d3_2 An array of objects. Each object is a depth point with key:value pairs of curve name and value. 
+         * @param {array} well_log_curves_reformatted_for_d3_2 An array of objects. Each object is a depth point with key:value pairs of curve name and value.
          * This was likely created by the three_things_2 function and returned like so: well_log_curves_reformatted_for_d3_2 = three_things_2["well_log_curves_reformatted_for_d3"]
          * @param {array} curves_to_skip An array of strings for curve names to skip plotting.
-         * @param {object} prebuilt_minimal_styles_by_curvename An object that maps curve names to style and styles to 
+         * @param {object} prebuilt_minimal_styles_by_curvename An object that maps curve names to style and styles to
          * basic style config like fill color
-         * @returns {array} array_of_jsons_for_what_to_plot - An array of objects for each curve to be plotted in its 
+         * @returns {array} array_of_jsons_for_what_to_plot - An array of objects for each curve to be plotted in its
          * curvebox via the curveBox() function or another function that funnels into curvebox.
          */
         forMultipleCurvesMinimumDataIntoTemplateFunc: function(well_log_curves_reformatted_for_d3_2,curves_to_skip,prebuilt_minimal_styles_by_curvename,uwi2,depth_curve_name){
@@ -1531,14 +1542,14 @@
                     var stylename = prebuilt_minimal_styles_by_curvename[0]["mapping_curvename_to_stylename"][array_curvenames[i]]
                      style = prebuilt_minimal_styles_by_curvename[0]["styles"][stylename]
                    }
-                   
+
                     var json_template_for_plotting = module.exports.minimumDataIntoTemplateFunc(example_template,well_log_curves_reformatted_for_d3_2,[uwi2],           [array_curvenames[i]],[style["line_color"]],[""],[
                        {"curve_name":array_curvenames[i],"fill":style["fill"],"fill_direction":style["fill_direction"],"cutoffs":   style["cutoffs"],"fill_colors":  style["fill_colors"],"curve2":""}],"well_holder_1A",200,400,depth_curve_name)
               ///
-              array_of_jsons_for_what_to_plot.push(json_template_for_plotting)  
+              array_of_jsons_for_what_to_plot.push(json_template_for_plotting)
                  }
               }
-            }  
+            }
             return array_of_jsons_for_what_to_plot
           },
 
